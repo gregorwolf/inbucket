@@ -1,0 +1,110 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inbucket
+  labels:
+    app: inbucket
+spec:
+  ports:
+    - name: http
+      port: 9000
+  selector:
+    app: inbucket
+    tier: frontend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inbucket-smtp
+spec:
+  type: LoadBalancer
+  selector:
+    app: inbucket
+    tier: frontend
+  ports:
+    - protocol: TCP
+      port: 2500
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inbucket-pop3
+spec:
+  type: LoadBalancer
+  selector:
+    app: inbucket
+    tier: frontend
+  ports:
+    - protocol: TCP
+      port: 1100
+---
+apiVersion: gateway.kyma-project.io/v1beta1
+kind: APIRule
+metadata:
+  labels:
+    app: inbucket
+  name: inbucket
+spec:
+  host: inbucket
+  service:
+    name: inbucket
+    port: 9000
+  gateway: kyma-gateway.kyma-system.svc.cluster.local
+  rules:
+    - path: /.*
+      methods: ["GET", "PUT", "POST", "HEAD", "PATCH", "DELETE"]
+      accessStrategies:
+        - handler: noop
+      mutators:
+        - handler: noop
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: inbucket-secret
+type: opaque
+stringData:
+  VCAP_SERVICES: >
+    {          
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inbucket
+  labels:
+    app: inbucket
+spec:
+  selector:
+    matchLabels:
+      app: inbucket
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: inbucket
+        tier: frontend
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+        - image: inbucket/inbucket
+          name: inbucket
+          imagePullPolicy: "Always"
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          ports:
+            - containerPort: 9000
+              name: http
+            - containerPort: 2500
+              name: smtp
+            - containerPort: 1100
+              name: pop3

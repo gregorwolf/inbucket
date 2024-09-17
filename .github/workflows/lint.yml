@@ -12,9 +12,6 @@ jobs:
         with:
           go-version: '1.21'
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v6
         with:
           version: latest
-          # Disable cache to prevent `File exists` errors.
-          # https://github.com/golangci/golangci-lint-action/issues/135
-          skip-pkg-cache: true

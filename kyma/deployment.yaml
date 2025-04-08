@@ -39,25 +39,23 @@ spec:
     - protocol: TCP
       port: 1100
 ---
-apiVersion: gateway.kyma-project.io/v1beta1
+apiVersion: gateway.kyma-project.io/v2alpha1
 kind: APIRule
 metadata:
   labels:
     app: inbucket
   name: inbucket
 spec:
-  host: inbucket
+  hosts:
+    - inbucket
   service:
     name: inbucket
     port: 9000
-  gateway: kyma-gateway.kyma-system.svc.cluster.local
+  gateway: kyma-system/kyma-gateway
   rules:
-    - path: /.*
+    - path: /*
       methods: ["GET", "PUT", "POST", "HEAD", "PATCH", "DELETE"]
-      accessStrategies:
-        - handler: noop
-      mutators:
-        - handler: noop
+      noAuth: true
 ---
 apiVersion: v1
 kind: Secret
